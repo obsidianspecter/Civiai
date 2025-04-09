@@ -45,44 +45,108 @@ export default function ReportGeneratorPage() {
       // Create a temporary div for the report content
       const reportDiv = document.createElement('div')
       reportDiv.className = 'p-8 bg-white'
-      reportDiv.style.width = '297mm' // A3 width
-      reportDiv.style.margin = '0'
-      reportDiv.style.padding = '20mm'
+      reportDiv.style.cssText = `
+        width: 297mm;
+        min-height: 420mm;
+        margin: 0;
+        padding: 25mm;
+        box-sizing: border-box;
+        background: white;
+      `
       reportDiv.innerHTML = `
-        <div style="font-family: Arial, sans-serif; color: #000; width: 100%;">
-          <h1 style="color: #333366; text-align: center; font-size: 36px; margin-bottom: 40px; font-weight: bold;">
-            ${formData.projectTitle}
-          </h1>
-          
-          <div style="margin-bottom: 40px; font-size: 18px;">
-            <p style="margin-bottom: 15px;"><strong style="font-size: 20px;">Project Type:</strong> ${formData.projectType}</p>
-            ${formData.clientName ? `<p style="margin-bottom: 15px;"><strong style="font-size: 20px;">Client:</strong> ${formData.clientName}</p>` : ''}
-            ${formData.location ? `<p style="margin-bottom: 15px;"><strong style="font-size: 20px;">Location:</strong> ${formData.location}</p>` : ''}
+        <div style="
+          font-family: Arial, sans-serif;
+          color: #000;
+          width: 100%;
+          height: 100%;
+          display: flex;
+          flex-direction: column;
+        ">
+          <div style="text-align: center; margin-bottom: 50px;">
+            <h1 style="
+              color: #333366;
+              font-size: 42px;
+              font-weight: bold;
+              margin-bottom: 50px;
+              text-transform: uppercase;
+            ">${formData.projectTitle}</h1>
           </div>
           
-          <div style="margin-bottom: 40px;">
-            <h2 style="color: #333366; font-size: 28px; margin-bottom: 20px; font-weight: bold;">Objective</h2>
-            <p style="font-size: 18px; line-height: 1.8;">${formData.objective.replace(/\n/g, '<br>')}</p>
+          <div style="margin-bottom: 50px;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 20px;">
+              <tr>
+                <td style="padding: 15px 0; width: 200px;"><strong>Project Type:</strong></td>
+                <td style="padding: 15px 0;">${formData.projectType}</td>
+              </tr>
+              ${formData.clientName ? `
+              <tr>
+                <td style="padding: 15px 0;"><strong>Client:</strong></td>
+                <td style="padding: 15px 0;">${formData.clientName}</td>
+              </tr>` : ''}
+              ${formData.location ? `
+              <tr>
+                <td style="padding: 15px 0;"><strong>Location:</strong></td>
+                <td style="padding: 15px 0;">${formData.location}</td>
+              </tr>` : ''}
+            </table>
           </div>
           
-          <div style="margin-bottom: 40px;">
-            <h2 style="color: #333366; font-size: 28px; margin-bottom: 20px; font-weight: bold;">Materials Used</h2>
-            <p style="font-size: 18px; line-height: 1.8;">${formData.materials.replace(/\n/g, '<br>')}</p>
+          <div style="margin-bottom: 50px;">
+            <h2 style="
+              color: #333366;
+              font-size: 32px;
+              font-weight: bold;
+              margin-bottom: 25px;
+              border-bottom: 2px solid #333366;
+              padding-bottom: 10px;
+            ">Objective</h2>
+            <p style="font-size: 20px; line-height: 1.8;">${formData.objective.replace(/\n/g, '<br>')}</p>
           </div>
           
-          <div style="margin-bottom: 40px;">
-            <h2 style="color: #333366; font-size: 28px; margin-bottom: 20px; font-weight: bold;">Methodology</h2>
-            <p style="font-size: 18px; line-height: 1.8;">${formData.methodology.replace(/\n/g, '<br>')}</p>
+          <div style="margin-bottom: 50px;">
+            <h2 style="
+              color: #333366;
+              font-size: 32px;
+              font-weight: bold;
+              margin-bottom: 25px;
+              border-bottom: 2px solid #333366;
+              padding-bottom: 10px;
+            ">Materials Used</h2>
+            <p style="font-size: 20px; line-height: 1.8;">${formData.materials.replace(/\n/g, '<br>')}</p>
           </div>
           
-          <div style="margin-bottom: 40px;">
-            <h2 style="color: #333366; font-size: 28px; margin-bottom: 20px; font-weight: bold;">Results & Findings</h2>
-            <p style="font-size: 18px; line-height: 1.8;">${formData.results.replace(/\n/g, '<br>')}</p>
+          <div style="margin-bottom: 50px;">
+            <h2 style="
+              color: #333366;
+              font-size: 32px;
+              font-weight: bold;
+              margin-bottom: 25px;
+              border-bottom: 2px solid #333366;
+              padding-bottom: 10px;
+            ">Methodology</h2>
+            <p style="font-size: 20px; line-height: 1.8;">${formData.methodology.replace(/\n/g, '<br>')}</p>
           </div>
           
-          <div style="text-align: center; margin-top: 60px; color: #666; border-top: 2px solid #ddd; padding-top: 30px;">
-            <p style="font-size: 16px; margin-bottom: 8px;">Generated by CiviAI - Civil Engineering Assistant</p>
-            <p style="font-size: 16px;">Date: ${new Date().toLocaleDateString()}</p>
+          <div style="margin-bottom: 50px;">
+            <h2 style="
+              color: #333366;
+              font-size: 32px;
+              font-weight: bold;
+              margin-bottom: 25px;
+              border-bottom: 2px solid #333366;
+              padding-bottom: 10px;
+            ">Results & Findings</h2>
+            <p style="font-size: 20px; line-height: 1.8;">${formData.results.replace(/\n/g, '<br>')}</p>
+          </div>
+          
+          <div style="
+            margin-top: auto;
+            text-align: center;
+            padding-top: 40px;
+            border-top: 2px solid #ddd;
+          ">
+            <p style="font-size: 18px; margin-bottom: 10px; color: #666;">Generated by CiviAI - Civil Engineering Assistant</p>
+            <p style="font-size: 18px; color: #666;">Date: ${new Date().toLocaleDateString()}</p>
           </div>
         </div>
       `
@@ -92,12 +156,14 @@ export default function ReportGeneratorPage() {
 
       // Convert to canvas with higher resolution
       const canvas = await html2canvas(reportDiv, {
-        scale: 4, // Increased scale for better quality
+        scale: 5, // Increased scale for better quality
         logging: false,
         useCORS: true,
         backgroundColor: '#ffffff',
         width: reportDiv.offsetWidth,
         height: reportDiv.offsetHeight,
+        windowWidth: reportDiv.offsetWidth,
+        windowHeight: reportDiv.offsetHeight
       })
 
       // Remove the temporary div
@@ -107,8 +173,9 @@ export default function ReportGeneratorPage() {
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
-        format: 'a3', // A3 format (297mm × 420mm)
-        compress: true
+        format: 'a3',
+        compress: true,
+        hotfixes: ['px_scaling']
       })
 
       const imgData = canvas.toDataURL('image/jpeg', 1.0)
@@ -116,7 +183,7 @@ export default function ReportGeneratorPage() {
       const pdfHeight = pdf.internal.pageSize.getHeight()
 
       // Add image with proper scaling to fit A3
-      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight)
+      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight, '', 'FAST')
 
       // Save the PDF
       pdf.save(`${formData.projectTitle.replace(/\s+/g, "-")}-Report.pdf`)
