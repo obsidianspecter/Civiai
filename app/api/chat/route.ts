@@ -1,74 +1,136 @@
-import { type NextRequest, NextResponse } from "next/server"
+import { NextResponse } from 'next/server'
+import { headers } from 'next/headers'
 
-export async function POST(req: NextRequest) {
+// Simple in-memory rate limiting
+const RATE_LIMIT_WINDOW = 60 * 1000 // 1 minute
+const MAX_REQUESTS_PER_WINDOW = 20
+const requestCounts = new Map<string, { count: number; timestamp: number }>()
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now()
+  const userRequests = requestCounts.get(ip)
+
+  if (!userRequests || (now - userRequests.timestamp) > RATE_LIMIT_WINDOW) {
+    requestCounts.set(ip, { count: 1, timestamp: now })
+    return false
+  }
+
+  if (userRequests.count >= MAX_REQUESTS_PER_WINDOW) {
+    return true
+  }
+
+  userRequests.count++
+  return false
+}
+
+export async function POST(req: Request) {
   try {
+    // Get client IP for rate limiting
+    const headersList = await headers()
+    const forwardedFor = headersList.get('x-forwarded-for')
+    const clientIp = forwardedFor ? forwardedFor.split(',')[0] : 'unknown'
+
+    if (isRateLimited(clientIp)) {
+      return NextResponse.json(
+        { message: 'Rate limit exceeded. Please try again later.' },
+        { status: 429 }
+      )
+    }
+
     const { messages } = await req.json()
 
-    // Call the FastAPI backend
-    const response = await fetch("http://localhost:8000/api/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messages }),
-      cache: "no-store",
+    if (!Array.isArray(messages) || messages.length === 0) {
+      return NextResponse.json(
+        { message: 'Invalid request: messages array is required' },
+        { status: 400 }
+      )
+    }
+
+    // Get the OpenRouter API key from environment variables
+    const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY
+
+    if (!OPENROUTER_API_KEY) {
+      return NextResponse.json(
+        { message: 'Please configure your OpenRouter API key in the environment variables.' },
+        { status: 500 }
+      )
+    }
+
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+        'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+        'X-Title': 'CiviAI - Civil Engineering Assistant'
+      },
+      body: JSON.stringify({
+        model: 'deepseek/deepseek-v3-base:free',
+        messages: [
+          {
+            role: 'system',
+            content: `You are a highly knowledgeable Civil Engineering AI Assistant. Your expertise covers:
+- Structural engineering and analysis
+- Construction materials and methods
+- Project planning and management
+- Building codes and standards
+- Environmental considerations
+- Cost estimation and quantity surveying
+- Quality control and safety protocols
+- Geotechnical engineering
+- Transportation engineering
+- Water resources engineering
+
+Provide detailed, technical, and accurate responses while maintaining clarity and professionalism. Use relevant engineering terms, standards, and calculations when appropriate.`
+          },
+          ...messages.map((msg: any) => ({
+            role: msg.role,
+            content: msg.content
+          }))
+        ],
+        temperature: 0.7,
+        max_tokens: 2000,
+        top_p: 0.9,
+        frequency_penalty: 0,
+        presence_penalty: 0
+      }),
     })
 
     if (!response.ok) {
-      throw new Error(`API error: ${response.status}`)
+      const error = await response.json().catch(() => ({}))
+      console.error('OpenRouter API error:', error)
+      
+      // Handle specific error cases
+      if (response.status === 401) {
+        return NextResponse.json(
+          { message: 'Invalid API key. Please check your OpenRouter API key configuration.' },
+          { status: 401 }
+        )
+      } else if (response.status === 429) {
+        return NextResponse.json(
+          { message: 'OpenRouter API rate limit reached. Please try again later.' },
+          { status: 429 }
+        )
+      }
+      
+      throw new Error('Failed to get response from OpenRouter')
     }
 
     const data = await response.json()
-    return NextResponse.json(data)
-  } catch (error) {
-    console.error("Error in chat API:", error)
-
-    // Fallback to simulated responses if the backend is not available
-    // Assuming messages is available in the catch block due to the try block
-    const messages = (await req.json()).messages
-    const lastMessage = messages[messages.length - 1]
-    let aiResponse =
-      "I'd be happy to help with your civil engineering question. Could you provide more specific details about what you'd like to know?"
-
-    const lowerInput = lastMessage.content.toLowerCase()
-    if (lowerInput.includes("m25") && lowerInput.includes("m30")) {
-      aiResponse = `# Differences between M25 and M30 Grade Concrete
-
-### Strength
-- **M25**: Characteristic compressive strength of 25 MPa (N/mm²) at 28 days
-- **M30**: Characteristic compressive strength of 30 MPa (N/mm²) at 28 days
-
-### Mix Ratio
-- **M25**: 1:1:2 (cement:sand:aggregate) with water-cement ratio of 0.44-0.48
-- **M30**: 1:0.75:1.5 with water-cement ratio of 0.42-0.45
-
-### Use Cases
-- **M25**: Commonly used in RCC columns, beams, slabs for residential buildings
-- **M30**: Used in more demanding structures like bridges, high-rise buildings, industrial structures
-
-### Testing Procedures
-Both grades follow the same testing procedures as per IS 456:
-1. Cube test (150mm × 150mm × 150mm specimens)
-2. Slump test for workability
-3. Compaction factor test
-
-The main difference is the expected strength results at 28 days.`
-    } else if (lowerInput.includes("beam") && lowerInput.includes("moment")) {
-      aiResponse = `For a simply supported beam of span 6m carrying a UDL of 20 kN/m:
-
-### Maximum Bending Moment Calculation
-1. For a simply supported beam with UDL, the maximum bending moment occurs at the center
-2. Formula: M_max = (w * L²) / 8
-   - w = 20 kN/m (UDL)
-   - L = 6m (span)
-   3. M_max = (20 * 6²) / 8 = (20 * 36) / 8 = 720 / 8 = 90 kN·m
-
-Therefore, the maximum bending moment is 90 kN·m.
-
-This assumes:
-- The beam has constant cross-section
-- The load is perfectly uniform
-- No additional point loads are present`
+    
+    if (!data.choices?.[0]?.message?.content) {
+      throw new Error('Invalid response format from OpenRouter')
     }
-
-    return NextResponse.json({ text: aiResponse, role: "assistant" })
+    
+    return NextResponse.json({ message: data.choices[0].message.content })
+  } catch (error) {
+    console.error('Error in chat API:', error)
+    return NextResponse.json(
+      { 
+        message: 'An error occurred while processing your request. Please try again.',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
+    )
   }
 }
