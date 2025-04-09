@@ -20,10 +20,13 @@ import datetime
 
 app = FastAPI()
 
-# Configure CORS
+# Configure CORS with proper origins
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify your frontend domain
+    allow_origins=[
+        "http://localhost:3000",  # Local development
+        "https://civiai-project.vercel.app",  # Replace with your Vercel domain
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

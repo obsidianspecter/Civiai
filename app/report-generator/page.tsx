@@ -41,20 +41,20 @@ export default function ReportGeneratorPage() {
     setIsGenerating(true)
 
     try {
-      // In a real implementation, this would call your FastAPI backend
-      // const response = await fetch("/api/generate-report", {
-      //   method: "POST",
-      //   headers: { "Content-Type": "application/json" },
-      //   body: JSON.stringify(formData),
-      // });
-      // const data = await response.json();
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/generate-report`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      })
 
-      // Simulating API response for demo
-      await new Promise((resolve) => setTimeout(resolve, 2000))
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
       setReportGenerated(true)
     } catch (error) {
       console.error("Error:", error)
-      alert("Failed to generate report. Please try again.")
+      alert("Failed to generate report. Please make sure the API server is running and try again.")
     } finally {
       setIsGenerating(false)
     }
@@ -64,15 +64,15 @@ export default function ReportGeneratorPage() {
     try {
       setIsGenerating(true)
 
-      // Call the API to generate the PDF
-      const response = await fetch("/api/generate-report", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/generate-report`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       })
 
       if (!response.ok) {
-        throw new Error("Failed to generate report")
+        const errorText = await response.text()
+        throw new Error(`Failed to generate report: ${errorText}`)
       }
 
       // Get the blob from the response
@@ -95,7 +95,7 @@ export default function ReportGeneratorPage() {
       window.URL.revokeObjectURL(url)
     } catch (error) {
       console.error("Error downloading report:", error)
-      alert("Failed to download report. Please try again.")
+      alert("Failed to download report. Please make sure the API server is running and try again.")
     } finally {
       setIsGenerating(false)
     }
